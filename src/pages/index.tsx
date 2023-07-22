@@ -2,9 +2,28 @@ import { CredentialType, IDKitWidget } from "@worldcoin/idkit";
 import type { ISuccessResult } from "@worldcoin/idkit";
 import type { VerifyReply } from "./api/verify";
 import { questions, Question } from '../data/questions';
+import React, { useState } from 'react';
 
 
 export default function Home() {
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [sliderValue, setSliderValue] = useState(5);
+	const [questionsDone, setQuestionDone] = useState(false);
+
+	const [values, setValues] = useState([]);
+
+	const handleSubmit = () => {
+        // Here you would usually send the sliderValue to your server
+        console.log(`Question: ${questions[currentQuestionIndex].title}, Rating: ${sliderValue}, Current ${currentQuestionIndex}`);
+
+        if (currentQuestionIndex < questions.length - 1) {
+            setCurrentQuestionIndex(currentQuestionIndex + 1);
+            setSliderValue(5);
+        } else {
+			setQuestionDone(true)
+		}
+    }
+
 	const onSuccess = (result: ISuccessResult) => {
 		// This is where you should perform frontend actions once a user has been verified, such as redirecting to a new page
 		window.alert("Successfully verified with World ID! Your nullifier hash is: " + result.nullifier_hash);
@@ -38,34 +57,43 @@ export default function Home() {
 
 	return (
 		<>
-		<div>
-            {questions.map((question: Question, index: number) => (
-                <div key={index}>
-                    <h2>{question.title}</h2>
-                    <p>{question.description}</p>
-                </div>
-            ))}
-        </div>
-
-		<div>
-			<div className="flex flex-col items-center justify-center align-middle h-screen">
-				<p className="text-2xl mb-5">World ID Cloud Template</p>
-				<IDKitWidget
-					action={process.env.NEXT_PUBLIC_WLD_ACTION_NAME!}
-					app_id={process.env.NEXT_PUBLIC_WLD_APP_ID!}
-					onSuccess={onSuccess}
-					handleVerify={handleProof}
-					credential_types={[CredentialType.Orb, CredentialType.Phone]}
-					autoClose
-				>
-					{({ open }) =>
-						<button className="border border-black rounded-md" onClick={open}>
-							<div className="mx-3 my-1">Verify with World ID</div>
-						</button>
-					}
-				</IDKitWidget>
+		{!questionsDone && 
+			<div>
+				<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+					<div className="max-w-md w-full bg-white p-6 rounded shadow">
+						<h2 className="text-2xl font-semibold mb-2">{questions[currentQuestionIndex].title}</h2>
+						<p className="text-gray-600 mb-4">{questions[currentQuestionIndex].description}</p>
+						<div className="flex items-center mb-4">
+							<input type="range" min="0" max="10" step="0.1" value={sliderValue} onChange={(e) => setSliderValue(parseFloat(e.target.value))} className="flex-grow mr-2"/>
+							<span>{sliderValue}</span>
+						</div>
+						<button onClick={handleSubmit} className="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600">Submit</button>
+					</div>
+				</div>
 			</div>
-		</div>
+		}
+
+		{ questionsDone && 
+			<div>
+				<div className="flex flex-col items-center justify-center align-middle h-screen">
+					<p className="text-2xl mb-5">World ID Cloud Template</p>
+					<IDKitWidget
+						action={process.env.NEXT_PUBLIC_WLD_ACTION_NAME!}
+						app_id={process.env.NEXT_PUBLIC_WLD_APP_ID!}
+						onSuccess={onSuccess}
+						handleVerify={handleProof}
+						credential_types={[CredentialType.Orb, CredentialType.Phone]}
+						autoClose
+					>
+						{({ open }) =>
+							<button className="border border-black rounded-md" onClick={open}>
+								<div className="mx-3 my-1">Verify with World ID</div>
+							</button>
+						}
+					</IDKitWidget>
+				</div>
+			</div>
+		}
 		</>
 	);
 }
