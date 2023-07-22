@@ -12,6 +12,8 @@ export default function Home() {
     const [sliderValue, setSliderValue] = useState(5);
 	const [questionsDone, setQuestionDone] = useState(false);
 	const [values, setValues] = useState<number[]>([]);
+	const [successMessage, setSuccessMessage] = useState("");
+
 
 	const firebaseConfig = {
 		apiKey: "AIzaSyDx2GdJQTszMTqNx2Q1hmYaFnrrFdWFGK8",
@@ -26,22 +28,21 @@ export default function Home() {
 	const app = initializeApp(firebaseConfig);
 	const db = getFirestore(app);
 
-	async function addData() {
+	async function addDataWorldCoin(votes:number[], worldCoinID:string) {
+
 		try {
-		  const docRef = await addDoc(collection(db, "Votes"), {
-			VoteID: "TEST TEST",
-			Votes: [4, 5, 6, 7],
-			WorldCoinID: "TEST"
+
+		  const docRef = await addDoc(collection(db, "Vote1"), {
+			Votes: votes,
+			WorldCoinID: worldCoinID
 		  });
+
 	  
 		  console.log("Document written with ID: ", docRef.id);
 		} catch (e) {
 		  console.error("Error adding document: ", e);
 		}
 	  }
-
-	addData(); 
-
 
 	const handleSubmit = () => {
         // Here you would usually send the sliderValue to your server
@@ -59,7 +60,11 @@ export default function Home() {
 
 	const onSuccess = (result: ISuccessResult) => {
 		// This is where you should perform frontend actions once a user has been verified, such as redirecting to a new page
-		window.alert("Successfully verified with World ID! Your nullifier hash is: " + result.nullifier_hash);
+		// window.alert("Successfully verified with World ID! Your nullifier hash is: " + result.nullifier_hash);
+
+		setSuccessMessage("Successfully verified with World ID! Your nullifier hash is: " + result.nullifier_hash);
+
+		addDataWorldCoin(values, result.nullifier_hash);
 	};
 
 	const handleProof = async (result: ISuccessResult) => {
@@ -142,7 +147,10 @@ export default function Home() {
 								<div className="mx-3 my-1">Verify with World ID</div>
 							</button>
 						}
+
 					</IDKitWidget>
+
+					<div className="text-green-500">{successMessage}</div>
 					
 					<br />
 					<br />
