@@ -2,9 +2,10 @@ import { CredentialType, IDKitWidget } from "@worldcoin/idkit";
 import type { ISuccessResult } from "@worldcoin/idkit";
 import type { VerifyReply } from "./api/verify";
 import { questions, Question } from '../data/questions';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 
 export default function Home() {
@@ -27,9 +28,9 @@ export default function Home() {
 	
 	const app = initializeApp(firebaseConfig);
 	const db = getFirestore(app);
+	const storage = getStorage(app);
 
 	async function addDataWorldCoin(votes:number[], worldCoinID:string) {
-
 		try {
 
 		  const docRef = await addDoc(collection(db, "Vote1"), {
@@ -42,7 +43,7 @@ export default function Home() {
 		} catch (e) {
 		  console.error("Error adding document: ", e);
 		}
-	  }
+	}
 
 	const handleSubmit = () => {
         // Here you would usually send the sliderValue to your server
@@ -90,6 +91,70 @@ export default function Home() {
 			console.log("Successful response from backend:\n", data); // Log the response from our backend for visibility
 		} else {
 			throw new Error(`Error code ${res.status} (${data.code}): ${data.detail}` ?? "Unknown error."); // Throw an error if verification fails
+		}
+	};
+
+	////////// VIDEO BUSINESS
+	const [isRecording, setIsRecording] = useState<boolean>(false);
+	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+	let stream: MediaStream | null = null;
+	const preview = useRef<HTMLVideoElement>(null);
+	const recordedChunks: BlobPart[] = [];
+
+	const startRecording = async () => {
+		setIsRecording(true);
+
+		stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+		if (preview.current) {
+			preview.current.srcObject = stream;
+		}
+
+		mediaRecorderRef.current = new MediaRecorder(stream, {mimeType: 'video/webm'});
+		mediaRecorderRef.current.ondataavailable = (e) => recordedChunks.push(e.data);
+		mediaRecorderRef.current.start();
+	};
+
+	const stopRecording = async () => {
+		setIsRecording(false);
+		if (mediaRecorderRef.current) {
+			mediaRecorderRef.current.stop();
+			mediaRecorderRef.current.onstop = async () => {
+				if (stream) {
+					stream.getTracks().forEach(track => track.stop());
+				}
+
+				const blob = new Blob(recordedChunks, { type: 'video/webm' });
+
+				console.log(blob);
+
+				const storageRef = ref(storage, `videos/${new Date().getTime()}.webm`);
+
+				// Upload to Firebase Storage
+				const uploadTask = uploadBytesResumable(storageRef, blob);
+
+				uploadTask.on('state_changed',
+				(snapshot) => {
+					const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+					console.log('Upload is ' + progress + '% done');
+				}, 
+				(error) => {
+					console.error('Upload failed:', error);
+				}, 
+				() => {
+					getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+					console.log('File available at', downloadURL);
+					
+					// Save the download URL to Firestore
+					const docRef = await addDoc(collection(db, "Vote1"), {
+						Votes: [], // replace this with your votes array
+						WebcamRecording: downloadURL
+					});
+
+					console.log("Document written with ID: ", docRef.id);
+					});
+				}
+				);
+			};
 		}
 	};
 
@@ -155,6 +220,12 @@ export default function Home() {
 					<br />
 					<br />
 					<p className="text-2xl mb-5">Verify with selfie video</p>
+
+					<div>
+						<button onClick={startRecording} disabled={isRecording}>Start recording</button>
+						<button onClick={stopRecording} disabled={!isRecording}>Stop recording</button>
+						<video ref={preview} autoPlay muted></video>
+					</div>
 
 				</div>
 			</div>
