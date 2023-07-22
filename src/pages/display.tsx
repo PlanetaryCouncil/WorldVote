@@ -4,7 +4,12 @@ import { useEffect, useState } from 'react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 
-const NewPage: React.FC = () => {
+interface VoteData {
+    votes: number[];
+    worldID: boolean;
+  }
+
+const Display: React.FC = () => {
 
 	const firebaseConfig = {
 		apiKey: "AIzaSyDx2GdJQTszMTqNx2Q1hmYaFnrrFdWFGK8",
@@ -18,6 +23,8 @@ const NewPage: React.FC = () => {
 	
 	const app = initializeApp(firebaseConfig);
 	const db = getFirestore(app);
+
+    const [data, setData] = useState<VoteData[]>([]);
     
     const fetchDataFromFirestore = async () => {
       try {
@@ -28,8 +35,14 @@ const NewPage: React.FC = () => {
           WorldCoinID: doc.get('WorldCoinID'),
         }));
 
-        //// WE ARE GETTING DATA ! ! ! ! (need nice charts)
-        console.log('Data from Firestore:', data);
+        const processedData = data.map(item => {
+            return {
+                votes: item.Votes,
+                worldID: !!item.WorldCoinID
+            }
+        })
+
+        setData(processedData);
 
         return data;
       } catch (error) {
@@ -43,10 +56,16 @@ const NewPage: React.FC = () => {
 
   return (
     <div>
-      <h1>New Page</h1>
-      <p>This is a new page in Next.js with React and TypeScript. Greg can handle the display data maybe?</p>
+      <h1>Firestore Data</h1>
+      <ul>
+        {data.map((item, index) => (
+          <li key={index}>
+            <strong>Votes:</strong> {item.votes.join(', ')}, <strong>WorldID:</strong> {item.worldID.toString()}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
 
-export default NewPage;
+export default Display;
