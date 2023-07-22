@@ -96,67 +96,129 @@ export default function Home() {
 
 	////////// VIDEO BUSINESS
 	const [isRecording, setIsRecording] = useState<boolean>(false);
+
+	const localVideoRef = useRef<HTMLVideoElement>(null);
+	const receivedVideoRef = useRef<HTMLVideoElement>(null);
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-	let stream: MediaStream | null = null;
-	const preview = useRef<HTMLVideoElement>(null);
-	const recordedChunks: BlobPart[] = [];
+	const recordedChunksRef = useRef<Blob[]>([]);
 
 	const startRecording = async () => {
 		setIsRecording(true);
+		try {
+		  const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+		  if (localVideoRef.current) {
+			localVideoRef.current.srcObject = stream;
+		  }
+		  mediaRecorderRef.current = new MediaRecorder(stream);
+		  mediaRecorderRef.current.ondataavailable = handleDataAvailable;
+		  mediaRecorderRef.current.onstop = handleStop;
+		  recordedChunksRef.current = [];
+		  mediaRecorderRef.current.start();
+		} catch (error) {
+		  console.error('Error accessing media devices:', error);
+		}
+	};
 
-		stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
-		if (preview.current) {
-			preview.current.srcObject = stream;
+	const handleDataAvailable = (event: any) => {
+		if (event.data.size > 0) {
+		  recordedChunksRef.current.push(event.data);
+		}
+	  };
+	
+	  const handleStop = () => {
+		const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+		console.log('Recorded Blob:', blob);
+		if (receivedVideoRef.current) {
+		  receivedVideoRef.current.src = URL.createObjectURL(blob);
 		}
 
-		mediaRecorderRef.current = new MediaRecorder(stream, {mimeType: 'video/webm'});
-		mediaRecorderRef.current.ondataavailable = (e) => recordedChunks.push(e.data);
-		mediaRecorderRef.current.start();
-	};
+		const storageRef = ref(storage, `videos/${new Date().getTime()}.webm`);
+	
+		// Upload to Firebase Storage
+		const uploadTask = uploadBytesResumable(storageRef, blob);
+  
+		uploadTask.on('state_changed',
+		  (snapshot) => {
+			const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+			console.log('Upload is ' + progress + '% done');
+		  }, 
+		  (error) => {
+			console.error('Upload failed:', error);
+		  }, 
+		  () => {
+			getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+			  console.log('File available at', downloadURL);
+			  
+			  // Save the download URL to Firestore
+			  const docRef = await addDoc(collection(db, "Vote1"), {
+				Votes: values,
+				WebcamRecording: downloadURL
+			  });
+  
+			  console.log("Document written with ID: ", docRef.id);
+			});
+		  }
+		);
+
+
+
+
+	  };
+	
+	  const stopRecording = () => {
+		if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+		  mediaRecorderRef.current.stop();
+		}
+	  };
+
+	/*
 
 	const stopRecording = async () => {
 		setIsRecording(false);
 		if (mediaRecorderRef.current) {
-			mediaRecorderRef.current.stop();
-			mediaRecorderRef.current.onstop = async () => {
-				if (stream) {
-					stream.getTracks().forEach(track => track.stop());
-				}
+		  mediaRecorderRef.current.stop();
+		  if (stream) {
+			stream.getTracks().forEach(track => track.stop());
+		  }
+	
+		  mediaRecorderRef.current.ondataavailable = null;
+		  mediaRecorderRef.current.onstop = null;
+	
+		  const blob = new Blob(recordedChunks, { type: 'video/webm' });
 
-				const blob = new Blob(recordedChunks, { type: 'video/webm' });
+		  console.log(blob);
 
-				console.log(blob);
-
-				const storageRef = ref(storage, `videos/${new Date().getTime()}.webm`);
-
-				// Upload to Firebase Storage
-				const uploadTask = uploadBytesResumable(storageRef, blob);
-
-				uploadTask.on('state_changed',
-				(snapshot) => {
-					const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-					console.log('Upload is ' + progress + '% done');
-				}, 
-				(error) => {
-					console.error('Upload failed:', error);
-				}, 
-				() => {
-					getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
-					console.log('File available at', downloadURL);
-					
-					// Save the download URL to Firestore
-					const docRef = await addDoc(collection(db, "Vote1"), {
-						Votes: [], // replace this with your votes array
-						WebcamRecording: downloadURL
-					});
-
-					console.log("Document written with ID: ", docRef.id);
-					});
-				}
-				);
-			};
+		  const storageRef = ref(storage, `videos/${new Date().getTime()}.webm`);
+	
+		  // Upload to Firebase Storage
+		  const uploadTask = uploadBytesResumable(storageRef, blob);
+	
+		  uploadTask.on('state_changed',
+			(snapshot) => {
+			  const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+			  console.log('Upload is ' + progress + '% done');
+			}, 
+			(error) => {
+			  console.error('Upload failed:', error);
+			}, 
+			() => {
+			  getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+				console.log('File available at', downloadURL);
+				
+				// Save the download URL to Firestore
+				const docRef = await addDoc(collection(db, "Vote1"), {
+				  Votes: values,
+				  WebcamRecording: downloadURL
+				});
+	
+				console.log("Document written with ID: ", docRef.id);
+			  });
+			}
+		  );
 		}
 	};
+
+	*/
 
 	return (
 		<>
@@ -224,7 +286,12 @@ export default function Home() {
 					<div>
 						<button onClick={startRecording} disabled={isRecording}>Start recording</button>
 						<button onClick={stopRecording} disabled={!isRecording}>Stop recording</button>
-						<video ref={preview} autoPlay muted></video>
+						
+						<video ref={localVideoRef} width="320" height="240" autoPlay muted />
+						<hr />
+						<h2>Received Blob:</h2>
+						<video ref={receivedVideoRef} width="320" height="240" controls />
+    
 					</div>
 
 				</div>
