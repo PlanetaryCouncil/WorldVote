@@ -1,6 +1,8 @@
 import { CredentialType, IDKitWidget } from "@worldcoin/idkit";
 import type { ISuccessResult } from "@worldcoin/idkit";
 import type { VerifyReply } from "./api/verify";
+import { questions, Question } from '../data/questions';
+
 
 export default function Home() {
 	const onSuccess = (result: ISuccessResult) => {
@@ -35,6 +37,16 @@ export default function Home() {
 	};
 
 	return (
+		<>
+		<div>
+            {questions.map((question: Question, index: number) => (
+                <div key={index}>
+                    <h2>{question.title}</h2>
+                    <p>{question.description}</p>
+                </div>
+            ))}
+        </div>
+
 		<div>
 			<div className="flex flex-col items-center justify-center align-middle h-screen">
 				<p className="text-2xl mb-5">World ID Cloud Template</p>
@@ -54,5 +66,6 @@ export default function Home() {
 				</IDKitWidget>
 			</div>
 		</div>
+		</>
 	);
 }
