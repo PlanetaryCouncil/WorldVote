@@ -12,7 +12,7 @@ export default function Home() {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [sliderValue, setSliderValue] = useState(5);
 	const [questionsDone, setQuestionDone] = useState(false);
-	const [values, setValues] = useState<number[]>([]);
+	const [values, setValues] = useState<(number|boolean)[]>([]);
 	const [successMessage, setSuccessMessage] = useState("");
 
 
@@ -30,7 +30,7 @@ export default function Home() {
 	const db = getFirestore(app);
 	const storage = getStorage(app);
 
-	async function addDataWorldCoin(votes:number[], worldCoinID:string) {
+	async function addDataWorldCoin(votes:(number|boolean)[], worldCoinID:string) {
 		try {
 
 		  const docRef = await addDoc(collection(db, "Vote1"), {
@@ -47,13 +47,16 @@ export default function Home() {
 
 	const handleSubmit = () => {
         // Here you would usually send the sliderValue to your server
-        console.log(`Question: ${questions[currentQuestionIndex].title}, Rating: ${sliderValue}, Current ${currentQuestionIndex}`);
+        console.log(`Question: ${questions[currentQuestionIndex].title}, Rating: ${sliderValue}, Toggle: ${toggleValue}, Current ${currentQuestionIndex}`);
 
-		setValues([...values, sliderValue]);
+		let uploadedValue = questions[currentQuestionIndex].yesno ? toggleValue : sliderValue;
+
+		setValues([...values, uploadedValue]);
 
         if (currentQuestionIndex < questions.length - 1) {
             setCurrentQuestionIndex(currentQuestionIndex + 1);
             setSliderValue(5);
+			setToggleValue(false);
         } else {
 			setQuestionDone(true)
 		}
@@ -183,18 +186,70 @@ export default function Home() {
 		console.log('Button clicked and additional handlers executed');
 	};
 
+	const [toggleValue, setToggleValue] = useState(false);
+
+	const toggle = () => {
+		setToggleValue(!toggleValue);
+	};
+
 	return (
 		<>
+
 		{!questionsDone && 
 			<div>
 				<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
 					<div className="max-w-md w-full bg-white p-6 rounded shadow">
 						<h2 className="text-2xl font-semibold mb-2">{questions[currentQuestionIndex].title}</h2>
 						<p className="text-gray-600 mb-4">{questions[currentQuestionIndex].description}</p>
-						<div className="flex items-center mb-4">
-							<input type="range" min="0" max="10" step="0.1" value={sliderValue} onChange={(e) => setSliderValue(parseFloat(e.target.value))} className="flex-grow mr-2"/>
-							<span>{sliderValue}</span>
-						</div>
+						{/* <div className="flex items-center mb-4"> */}
+							{/* <input type="range" min="0" max="10" step="0.1" value={sliderValue} onChange={(e) => setSliderValue(parseFloat(e.target.value))} className="flex-grow mr-2"/>
+							<span>{sliderValue}</span> */}
+
+							{
+								questions[currentQuestionIndex].yesno ? (
+									// Toggle
+									<div className="flex items-center mb-4">
+									<label
+										htmlFor="toggle"
+										className={`${
+										toggleValue ? "bg-blue-600" : "bg-gray-300"
+										} relative inline-block w-12 rounded-full h-6 transition-colors duration-200 ease-in-out cursor-pointer`}
+									>
+										<input
+										id="toggle"
+										type="checkbox"
+										className="opacity-0 w-0 h-0"
+										checked={toggleValue}
+										onChange={() => setToggleValue(!toggleValue)}
+										/>
+										<span
+										className={`${
+											toggleValue ? "translate-x-6" : "translate-x-1"
+										} inline-block w-5 h-5 bg-white rounded-full transform transition-transform duration-200 ease-in-out`}
+										/>
+									</label>
+									<span className="ml-3 text-gray-700 font-medium">
+										{toggleValue ? "Yes" : "No"}
+									</span>
+									</div>
+								) : (
+									// Slider
+									<div className="flex items-center mb-4">
+									<input
+										type="range"
+										min="0"
+										max="10"
+										step="0.1"
+										value={sliderValue}
+										onChange={(e) => setSliderValue(parseFloat(e.target.value))}
+										className="flex-grow mr-2"
+									/>
+									<span>{sliderValue}</span>
+									</div>
+								)
+								}
+
+						{/* </div> */}
 						<button onClick={handleSubmit} className="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600">Submit</button>
 					</div>
 				</div>
