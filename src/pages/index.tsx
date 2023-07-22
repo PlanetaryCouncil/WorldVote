@@ -63,7 +63,7 @@ export default function Home() {
 		// This is where you should perform frontend actions once a user has been verified, such as redirecting to a new page
 		// window.alert("Successfully verified with World ID! Your nullifier hash is: " + result.nullifier_hash);
 
-		setSuccessMessage("Successfully verified with World ID! Your nullifier hash is: " + result.nullifier_hash);
+		setSuccessMessage("Successfully verified with World ID!");
 
 		addDataWorldCoin(values, result.nullifier_hash);
 	};
@@ -104,6 +104,7 @@ export default function Home() {
 	const [videoURL, setVideoURL] = useState("");
 	const recordingStopped = useRef(false);
 	const [submittedToFirebase, setSubmittedToFirebase] = useState(false);
+	const [usingWorldID, setUsingWorldID] = useState(false);
 
 	const startRecording = async () => {
 		setIsRecording(true);
@@ -167,14 +168,20 @@ export default function Home() {
 	  };
 
 		async function submitFirebase() {
-		  const docRef = await addDoc(collection(db, "Vote1"), {
+			const docRef = await addDoc(collection(db, "Vote1"), {
 			Votes: values,
 			WebcamRecording: videoURL
-		  });
+			});
 
-		  console.log("Document written with ID: ", docRef.id);
-		  setSubmittedToFirebase(true);
+			console.log("Document written with ID: ", docRef.id);
+			setSubmittedToFirebase(true);
 		}
+
+	// Additional function to hide the webcam recording button
+	const handleOpenClick = () => {
+		setUsingWorldID(true);
+		console.log('Button clicked and additional handlers executed');
+	};
 
 	return (
 		<>
@@ -215,7 +222,7 @@ export default function Home() {
                 </div>
             ))}
 
-					{ !(isRecording || recordingStopped.current) && <IDKitWidget
+					{ !(isRecording || recordingStopped.current) && !successMessage && <IDKitWidget
 						action={process.env.NEXT_PUBLIC_WLD_ACTION_NAME!}
 						app_id={process.env.NEXT_PUBLIC_WLD_APP_ID!}
 						onSuccess={onSuccess}
@@ -224,7 +231,10 @@ export default function Home() {
 						autoClose
 					>
 						{({ open }) =>
-							<button className="border border-black rounded-md" onClick={open}>
+							<button className="border border-black rounded-md"onClick={() => {
+								handleOpenClick();
+								open();
+							  }}>
 								<div className="mx-3 my-1">Verify with World ID</div>
 							</button>
 						}
@@ -233,29 +243,32 @@ export default function Home() {
 					
 					<div className="text-green-500">{successMessage}</div>
 
-					{ !isRecording &&
-							<button className="border border-black rounded-md" onClick={startRecording} >
-								<div className="mx-3 my-1">Verify with selfie video</div>
+				{!usingWorldID &&
+					<div>
+						{ !isRecording &&
+								<button className="border border-black rounded-md" onClick={startRecording} >
+									<div className="mx-3 my-1">Verify with selfie video</div>
+								</button>
+						}
+						{ isRecording && !recordingStopped.current &&
+							<button className="border border-black rounded-md" onClick={stopRecording} >
+								<div className="mx-3 my-1">Stop recording</div>
 							</button>
-					}
-					{ isRecording && !recordingStopped.current &&
-						<button className="border border-black rounded-md" onClick={stopRecording} >
-							<div className="mx-3 my-1">Stop recording</div>
-						</button>
-					}
-					
-					{ isRecording && !recordingStopped.current && <video ref={localVideoRef} width="320" height="240" autoPlay muted /> }
+						}
+						
+						{ isRecording && !recordingStopped.current && <video ref={localVideoRef} width="320" height="240" autoPlay muted /> }
 
-					<div style={{ display: videoURL && !submittedToFirebase ? 'block' : 'none' }}>
-						<h2>Recorded video:</h2>
-						<video ref={receivedVideoRef} width="320" height="240" controls />
-						<button className="border border-black rounded-md" onClick={submitFirebase} >
-							<div className="mx-3 my-1">Submit data</div>
-						</button>
+						<div style={{ display: videoURL && !submittedToFirebase ? 'block' : 'none' }}>
+							<h2>Recorded video:</h2>
+							<video ref={receivedVideoRef} width="320" height="240" controls />
+							<button className="border border-black rounded-md" onClick={submitFirebase} >
+								<div className="mx-3 my-1">Submit data</div>
+							</button>
+						</div>
+
+						{ submittedToFirebase && <div className="text-green-500">Successfully submitted data to Firebase!</div>}
 					</div>
-
-					{ submittedToFirebase && <div className="text-green-500">Successfully submitted data to Firebase!</div>}
-
+				}
 				</div>
 			</div>
 		}
