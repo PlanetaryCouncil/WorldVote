@@ -103,6 +103,7 @@ export default function Home() {
 	const recordedChunksRef = useRef<Blob[]>([]);
 	const [videoURL, setVideoURL] = useState("");
 	const recordingStopped = useRef(false);
+	const [submittedToFirebase, setSubmittedToFirebase] = useState(false);
 
 	const startRecording = async () => {
 		setIsRecording(true);
@@ -172,6 +173,7 @@ export default function Home() {
 		  });
 
 		  console.log("Document written with ID: ", docRef.id);
+		  setSubmittedToFirebase(true);
 		}
 
 	return (
@@ -213,9 +215,7 @@ export default function Home() {
                 </div>
             ))}
 
-
-					{/* <p className="text-2xl mb-5">World ID Cloud Template</p> */}
-					<IDKitWidget
+					{ !(isRecording || recordingStopped.current) && <IDKitWidget
 						action={process.env.NEXT_PUBLIC_WLD_ACTION_NAME!}
 						app_id={process.env.NEXT_PUBLIC_WLD_APP_ID!}
 						onSuccess={onSuccess}
@@ -229,7 +229,7 @@ export default function Home() {
 							</button>
 						}
 
-					</IDKitWidget>
+					</IDKitWidget>}
 					
 					<div className="text-green-500">{successMessage}</div>
 
@@ -246,13 +246,15 @@ export default function Home() {
 					
 					{ isRecording && !recordingStopped.current && <video ref={localVideoRef} width="320" height="240" autoPlay muted /> }
 
-					<div style={{ display: videoURL ? 'block' : 'none' }}>
+					<div style={{ display: videoURL && !submittedToFirebase ? 'block' : 'none' }}>
 						<h2>Recorded video:</h2>
 						<video ref={receivedVideoRef} width="320" height="240" controls />
 						<button className="border border-black rounded-md" onClick={submitFirebase} >
 							<div className="mx-3 my-1">Submit data</div>
 						</button>
 					</div>
+
+					{ submittedToFirebase && <div className="text-green-500">Successfully submitted data to Firebase!</div>}
 
 				</div>
 			</div>
