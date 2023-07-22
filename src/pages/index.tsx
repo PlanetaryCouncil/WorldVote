@@ -149,7 +149,6 @@ export default function Home() {
 			getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
 			  console.log('File available at', downloadURL);
 			  
-			  // Save the download URL to Firestore
 			  const docRef = await addDoc(collection(db, "Vote1"), {
 				Votes: values,
 				WebcamRecording: downloadURL
