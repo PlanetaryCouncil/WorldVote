@@ -20,13 +20,13 @@ export const questions: Question[] = [
     {
         title: "Disputed land can temporarily become international jurisdiction.",
         description: `Boys cannot agree so noone can have it.
-        It is completely destroyed anyway.
+        It is destroyed anyway.
         Fewer people live there now.`
     },
     {
         title: "We can build cities for refugees affected by the climate change.",
-        description: `The UN Refugee Agency states there are more than 100m refugees worldwide.
-        Building new cities in places adapted to climate change
+        description: `The UN Refugee Agency estimates there are more than 100m refugees worldwide.
+        Building new cities in places resilient to climate change.
         It is better to start planning now and prepare for the future.`
     }
 ]

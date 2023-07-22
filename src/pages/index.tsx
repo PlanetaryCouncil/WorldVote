@@ -3,18 +3,51 @@ import type { ISuccessResult } from "@worldcoin/idkit";
 import type { VerifyReply } from "./api/verify";
 import { questions, Question } from '../data/questions';
 import React, { useState } from 'react';
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 
 export default function Home() {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [sliderValue, setSliderValue] = useState(5);
 	const [questionsDone, setQuestionDone] = useState(false);
+	const [values, setValues] = useState<number[]>([]);
 
-	const [values, setValues] = useState([]);
+	const firebaseConfig = {
+		apiKey: "AIzaSyDx2GdJQTszMTqNx2Q1hmYaFnrrFdWFGK8",
+		authDomain: "worldvote-8f984.firebaseapp.com",
+		projectId: "worldvote-8f984",
+		storageBucket: "worldvote-8f984.appspot.com",
+		messagingSenderId: "53279430852",
+		appId: "1:53279430852:web:f6001b1f82140d122c5191",
+		measurementId: "G-260B099L1M"
+	  };
+	
+	const app = initializeApp(firebaseConfig);
+	const db = getFirestore(app);
+
+	async function addData() {
+		try {
+		  const docRef = await addDoc(collection(db, "Votes"), {
+			VoteID: "TEST TEST",
+			Votes: [4, 5, 6, 7],
+			WorldCoinID: "TEST"
+		  });
+	  
+		  console.log("Document written with ID: ", docRef.id);
+		} catch (e) {
+		  console.error("Error adding document: ", e);
+		}
+	  }
+
+	addData(); 
+
 
 	const handleSubmit = () => {
         // Here you would usually send the sliderValue to your server
         console.log(`Question: ${questions[currentQuestionIndex].title}, Rating: ${sliderValue}, Current ${currentQuestionIndex}`);
+
+		setValues([...values, sliderValue]);
 
         if (currentQuestionIndex < questions.length - 1) {
             setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -76,6 +109,25 @@ export default function Home() {
 		{ questionsDone && 
 			<div>
 				<div className="flex flex-col items-center justify-center align-middle h-screen">
+
+				{questions.map((question, index) => (
+                <div key={index} className="max-w-md w-full bg-white p-6 rounded shadow mb-4">
+                    <h2 className="text-2xl font-semibold mb-2">{question.title}</h2>
+                    <div className="flex items-center mb-4">
+                        <input 
+                            type="range" 
+                            min="1" 
+                            max="10" 
+                            value={values[index]}
+                            className="flex-grow mr-2"
+							readOnly
+                        />
+						<span>{values[index]}</span>
+                    </div>
+                </div>
+            ))}
+
+
 					<p className="text-2xl mb-5">World ID Cloud Template</p>
 					<IDKitWidget
 						action={process.env.NEXT_PUBLIC_WLD_ACTION_NAME!}
@@ -91,6 +143,11 @@ export default function Home() {
 							</button>
 						}
 					</IDKitWidget>
+					
+					<br />
+					<br />
+					<p className="text-2xl mb-5">Verify with selfie video</p>
+
 				</div>
 			</div>
 		}
