@@ -101,6 +101,8 @@ export default function Home() {
 	const receivedVideoRef = useRef<HTMLVideoElement>(null);
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const recordedChunksRef = useRef<Blob[]>([]);
+	const [videoURL, setVideoURL] = useState("");
+	const recordingStopped = useRef(false);
 
 	const startRecording = async () => {
 		setIsRecording(true);
@@ -148,76 +150,29 @@ export default function Home() {
 		  () => {
 			getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
 			  console.log('File available at', downloadURL);
-			  
-			  const docRef = await addDoc(collection(db, "Vote1"), {
-				Votes: values,
-				WebcamRecording: downloadURL
-			  });
-  
-			  console.log("Document written with ID: ", docRef.id);
+			  setVideoURL(downloadURL);
 			});
 		  }
 		);
-
-
-
-
 	  };
 	
 	  const stopRecording = () => {
 		if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
 		  mediaRecorderRef.current.stop();
+		  
 		}
+		recordingStopped.current = true;
+		console.log('Recording Stopped:', recordingStopped.current);
 	  };
 
-	/*
+		async function submitFirebase() {
+		  const docRef = await addDoc(collection(db, "Vote1"), {
+			Votes: values,
+			WebcamRecording: videoURL
+		  });
 
-	const stopRecording = async () => {
-		setIsRecording(false);
-		if (mediaRecorderRef.current) {
-		  mediaRecorderRef.current.stop();
-		  if (stream) {
-			stream.getTracks().forEach(track => track.stop());
-		  }
-	
-		  mediaRecorderRef.current.ondataavailable = null;
-		  mediaRecorderRef.current.onstop = null;
-	
-		  const blob = new Blob(recordedChunks, { type: 'video/webm' });
-
-		  console.log(blob);
-
-		  const storageRef = ref(storage, `videos/${new Date().getTime()}.webm`);
-	
-		  // Upload to Firebase Storage
-		  const uploadTask = uploadBytesResumable(storageRef, blob);
-	
-		  uploadTask.on('state_changed',
-			(snapshot) => {
-			  const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-			  console.log('Upload is ' + progress + '% done');
-			}, 
-			(error) => {
-			  console.error('Upload failed:', error);
-			}, 
-			() => {
-			  getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
-				console.log('File available at', downloadURL);
-				
-				// Save the download URL to Firestore
-				const docRef = await addDoc(collection(db, "Vote1"), {
-				  Votes: values,
-				  WebcamRecording: downloadURL
-				});
-	
-				console.log("Document written with ID: ", docRef.id);
-			  });
-			}
-		  );
+		  console.log("Document written with ID: ", docRef.id);
 		}
-	};
-
-	*/
 
 	return (
 		<>
@@ -259,7 +214,7 @@ export default function Home() {
             ))}
 
 
-					<p className="text-2xl mb-5">World ID Cloud Template</p>
+					{/* <p className="text-2xl mb-5">World ID Cloud Template</p> */}
 					<IDKitWidget
 						action={process.env.NEXT_PUBLIC_WLD_ACTION_NAME!}
 						app_id={process.env.NEXT_PUBLIC_WLD_APP_ID!}
@@ -275,22 +230,28 @@ export default function Home() {
 						}
 
 					</IDKitWidget>
-
-					<div className="text-green-500">{successMessage}</div>
 					
-					<br />
-					<br />
-					<p className="text-2xl mb-5">Verify with selfie video</p>
+					<div className="text-green-500">{successMessage}</div>
 
-					<div>
-						<button onClick={startRecording} disabled={isRecording}>Start recording</button>
-						<button onClick={stopRecording} disabled={!isRecording}>Stop recording</button>
-						
-						<video ref={localVideoRef} width="320" height="240" autoPlay muted />
-						<hr />
-						<h2>Received Blob:</h2>
+					{ !isRecording &&
+							<button className="border border-black rounded-md" onClick={startRecording} >
+								<div className="mx-3 my-1">Verify with selfie video</div>
+							</button>
+					}
+					{ isRecording && !recordingStopped.current &&
+						<button className="border border-black rounded-md" onClick={stopRecording} >
+							<div className="mx-3 my-1">Stop recording</div>
+						</button>
+					}
+					
+					{ isRecording && !recordingStopped.current && <video ref={localVideoRef} width="320" height="240" autoPlay muted /> }
+
+					<div style={{ display: videoURL ? 'block' : 'none' }}>
+						<h2>Recorded video:</h2>
 						<video ref={receivedVideoRef} width="320" height="240" controls />
-    
+						<button className="border border-black rounded-md" onClick={submitFirebase} >
+							<div className="mx-3 my-1">Submit data</div>
+						</button>
 					</div>
 
 				</div>
