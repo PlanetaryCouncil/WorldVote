@@ -6,6 +6,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, addDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import confetti from 'canvas-confetti';
+
 
 
 export default function Home() {
@@ -195,6 +197,22 @@ export default function Home() {
 	  };
 
 		async function submitFirebase() {
+			if (buttonRef.current) {
+				const buttonRect = buttonRef.current.getBoundingClientRect(); // Get the position of the button
+				const xPos = buttonRect.left + buttonRect.width / 2; // Get the X position of the center of the button
+				const yPos = buttonRect.top + buttonRect.height / 2; // Get the Y position of the center of the button
+			
+				confetti({
+				particleCount: 100,
+				spread: 70,
+				origin: {
+					x: xPos / window.innerWidth, // Convert the X position to a ratio of the viewport width
+					y: yPos / window.innerHeight // Convert the Y position to a ratio of the viewport height
+				}
+				});
+			}
+
+
 			const docRef = await addDoc(collection(db, "Vote1"), {
 			Votes: values,
 			WebcamRecording: videoURL
@@ -202,6 +220,9 @@ export default function Home() {
 
 			console.log("Document written with ID: ", docRef.id);
 			setSubmittedToFirebase(true);
+
+
+
 		}
 
 	// Additional function to hide the webcam recording button
@@ -218,6 +239,8 @@ export default function Home() {
 
 	type ToggleValue = 'undecided' | 'yes' | 'no';
 	const [toggleValue3, setToggleValue3] = useState<ToggleValue>('undecided');
+
+	const buttonRef = useRef<HTMLButtonElement | null>(null);
 
 	return (
 		<>
@@ -421,7 +444,7 @@ export default function Home() {
 							<h2>Recorded video:</h2>
 							<video ref={receivedVideoRef} width="320" height="240" controls />
 							
-							<button className="border border-black rounded-md" onClick={submitFirebase} >
+							<button className="border border-black rounded-md" ref={buttonRef} onClick={submitFirebase} >
 								<div className="mx-3 my-1">Submit data & uploaded video</div>
 							</button>
 						</div>

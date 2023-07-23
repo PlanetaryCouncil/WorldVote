@@ -192,7 +192,7 @@ const Display: React.FC = () => {
 				);
 			})}
 			{/* Used for Mockup Reasons */}
-			<div className="my-3 card outline-black/10 outline shadow-md">
+			{/* <div className="my-3 card outline-black/10 outline shadow-md">
 				<div className="card-body">
 					<p className="mb-1 text-black/60">Responses for question #0</p>
 					<div className="w-full ">
@@ -281,7 +281,7 @@ const Display: React.FC = () => {
 						<strong>WorldID:</strong> {item.worldID.toString()}
 					</li>
 				))}
-			</ul>
+			</ul> */}
 		</div>
 	);
 };
