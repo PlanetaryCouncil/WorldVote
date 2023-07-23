@@ -12,7 +12,7 @@ export default function Home() {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [sliderValue, setSliderValue] = useState(5);
 	const [questionsDone, setQuestionDone] = useState(false);
-	const [values, setValues] = useState<(number|boolean)[]>([]);
+	const [values, setValues] = useState<(number|boolean|ToggleValue)[]>([]);
 	const [successMessage, setSuccessMessage] = useState("");
 	const [count, setCount] = useState(3);
 	const [isCountingDown, setIsCountingDown] = useState(false);
@@ -46,7 +46,7 @@ export default function Home() {
 	const db = getFirestore(app);
 	const storage = getStorage(app);
 
-	async function addDataWorldCoin(votes:(number|boolean)[], worldCoinID:string) {
+	async function addDataWorldCoin(votes:(number|boolean|ToggleValue)[], worldCoinID:string) {
 		try {
 
 		  const docRef = await addDoc(collection(db, "Vote1"), {
@@ -63,16 +63,16 @@ export default function Home() {
 
 	const handleSubmit = () => {
         // Here you would usually send the sliderValue to your server
-        console.log(`Question: ${questions[currentQuestionIndex].title}, Rating: ${sliderValue}, Toggle: ${toggleValue}, Current ${currentQuestionIndex}`);
+        console.log(`Question: ${questions[currentQuestionIndex].title}, Rating: ${sliderValue}, Toggle: ${toggleValue3}, Current ${currentQuestionIndex}`);
 
-		let uploadedValue = questions[currentQuestionIndex].yesno ? toggleValue : sliderValue;
+		let uploadedValue = questions[currentQuestionIndex].yesno ? toggleValue3 : sliderValue;
 
 		setValues([...values, uploadedValue]);
 
         if (currentQuestionIndex < questions.length - 1) {
             setCurrentQuestionIndex(currentQuestionIndex + 1);
             setSliderValue(5);
-			setToggleValue(false);
+			setToggleValue3('undecided');
         } else {
 			setQuestionDone(true)
 		}
@@ -210,11 +210,14 @@ export default function Home() {
 		console.log('Button clicked and additional handlers executed');
 	};
 
-	const [toggleValue, setToggleValue] = useState(false);
+	// const [toggleValue, setToggleValue] = useState(false);
 
-	const toggle = () => {
-		setToggleValue(!toggleValue);
-	};
+	// const toggle = () => {
+	// 	setToggleValue(!toggleValue);
+	// };
+
+	type ToggleValue = 'undecided' | 'yes' | 'no';
+	const [toggleValue3, setToggleValue3] = useState<ToggleValue>('undecided');
 
 	return (
 		<>
@@ -222,6 +225,7 @@ export default function Home() {
 		{!questionsDone && 
 			<div>
 				<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+
 					<div className="max-w-md w-full bg-white p-6 rounded shadow">
 						<h2 className="text-2xl font-semibold mb-2">{questions[currentQuestionIndex].title}</h2>
 						<p className="text-gray-600 mb-4">{questions[currentQuestionIndex].description}</p>
@@ -230,7 +234,28 @@ export default function Home() {
 								questions[currentQuestionIndex].yesno ? (
 									// Toggle
 									<div className="flex items-center mb-4">
-									<label
+
+
+	<div className="p-6 max-w-md mx-auto bg-white rounded-xl shadow-md flex items-center space-x-4">
+      <div className="flex items-center">
+        <div className="flex items-center text-gray-700 mr-3">
+          <input type="radio" className="form-radio h-5 w-5 text-gray-600" checked={toggleValue3 === 'undecided'} onChange={() => setToggleValue3('undecided')} />
+          <label className="ml-2 text-sm text-gray-700">Undecided</label>
+        </div>
+        <div className="flex items-center text-gray-700 mr-3">
+          <input type="radio" className="form-radio h-5 w-5 text-gray-600" checked={toggleValue3 === 'yes'} onChange={() => setToggleValue3('yes')} />
+          <label className="ml-2 text-sm text-gray-700">Yes</label>
+        </div>
+        <div className="flex items-center text-gray-700 mr-3">
+          <input type="radio" className="form-radio h-5 w-5 text-gray-600" checked={toggleValue3 === 'no'} onChange={() => setToggleValue3('no')} />
+          <label className="ml-2 text-sm text-gray-700">No</label>
+        </div>
+      </div>
+    </div>
+
+
+
+									{/* <label
 										htmlFor="toggle"
 										className={`${
 										toggleValue ? "bg-blue-600" : "bg-gray-300"
@@ -251,8 +276,13 @@ export default function Home() {
 									</label>
 									<span className="ml-3 text-gray-700 font-medium">
 										{toggleValue ? "Yes" : "No"}
-									</span>
+									</span> */}
 									</div>
+
+
+
+
+
 								) : (
 									// Slider
 									<div className="flex items-center mb-4">
@@ -286,7 +316,7 @@ export default function Home() {
 							{question.yesno ? (
 								// Toggle
 								<div className="flex items-center mb-4">
-									<label
+									{/* <label
 										htmlFor={`toggle-${index}`}
 										className={`${
 											values[index] ? "bg-blue-600" : "bg-gray-300"
@@ -307,7 +337,27 @@ export default function Home() {
 									</label>
 									<span className="ml-3 text-gray-700 font-medium">
 										{values[index] ? "Yes" : "No"}
-									</span>
+									</span> */}
+
+
+									<div className="p-6 max-w-md mx-auto bg-white rounded-xl shadow-md flex items-center space-x-4">
+										<div className="flex items-center">
+											<div className="flex items-center text-gray-700 mr-3">
+												<input type="radio" className="form-radio h-5 w-5 text-gray-600" checked={values[index] === 'undecided'} disabled/>
+												<label className="ml-2 text-sm text-gray-700">Undecided</label>
+											</div>
+											<div className="flex items-center text-gray-700 mr-3">
+												<input type="radio" className="form-radio h-5 w-5 text-gray-600" checked={values[index] === 'yes'} disabled/>
+												<label className="ml-2 text-sm text-gray-700">Yes</label>
+											</div>
+											<div className="flex items-center text-gray-700 mr-3">
+												<input type="radio" className="form-radio h-5 w-5 text-gray-600" checked={values[index] === 'no'} disabled/>
+												<label className="ml-2 text-sm text-gray-700">No</label>
+											</div>
+										</div>
+									</div>
+
+									
 								</div>
 							) : (
 								// Slider
@@ -360,7 +410,7 @@ export default function Home() {
 							</button>
 						}
 
-						{isCountingDown && <h1>{count}</h1>}
+						{ isCountingDown && <h1 className="text-xl">{count}</h1>}
 						
 						{ isRecording && !recordingStopped.current && <video ref={localVideoRef} width="320" height="240" autoPlay muted /> }
 
