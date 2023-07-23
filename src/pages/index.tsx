@@ -3,7 +3,7 @@ import type { ISuccessResult } from "@worldcoin/idkit";
 import type { VerifyReply } from "./api/verify";
 import { questions, Question } from '../data/questions';
 import React, { useState, useRef } from 'react';
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, addDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
@@ -15,18 +15,23 @@ export default function Home() {
 	const [values, setValues] = useState<(number|boolean)[]>([]);
 	const [successMessage, setSuccessMessage] = useState("");
 
-
+	let app;
 	const firebaseConfig = {
-		apiKey: "AIzaSyDx2GdJQTszMTqNx2Q1hmYaFnrrFdWFGK8",
-		authDomain: "worldvote-8f984.firebaseapp.com",
-		projectId: "worldvote-8f984",
-		storageBucket: "worldvote-8f984.appspot.com",
-		messagingSenderId: "53279430852",
-		appId: "1:53279430852:web:f6001b1f82140d122c5191",
-		measurementId: "G-260B099L1M"
+		apiKey: process.env.NEXT_PUBLIC_WLD_apiKey,
+		authDomain: process.env.NEXT_PUBLIC_WLD_authDomain,
+		projectId: process.env.NEXT_PUBLIC_WLD_projectId,
+		storageBucket: process.env.NEXT_PUBLIC_WLD_storageBucket,
+		messagingSenderId: process.env.NEXT_PUBLIC_WLD_messagingSenderId,
+		appId: process.env.NEXT_PUBLIC_WLD_appId,
+		measurementId: process.env.NEXT_PUBLIC_WLD_measurementId
 	  };
 	
-	const app = initializeApp(firebaseConfig);
+	  if (!getApps().length) {
+        app = initializeApp(firebaseConfig);
+      } else {
+        app = getApps()[0]; // if Firebase app is already initialized, use the existing app
+      }
+
 	const db = getFirestore(app);
 	const storage = getStorage(app);
 
@@ -260,22 +265,52 @@ export default function Home() {
 			<div>
 				<div className="flex flex-col items-center justify-center align-middle h-screen">
 
-				{questions.map((question, index) => (
-                <div key={index} className="max-w-md w-full bg-white p-6 rounded shadow mb-4">
-                    <h2 className="text-2xl font-semibold mb-2">{question.title}</h2>
-                    <div className="flex items-center mb-4">
-                        <input 
-                            type="range" 
-                            min="1" 
-                            max="10" 
-                            value={values[index]}
-                            className="flex-grow mr-2"
-							readOnly
-                        />
-						<span>{values[index]}</span>
-                    </div>
-                </div>
-            ))}
+					{questions.map((question, index) => (
+						<div key={index} className="max-w-md w-full bg-white p-6 rounded shadow mb-4">
+							<h2 className="text-2xl font-semibold mb-2">{question.title}</h2>
+							{question.yesno ? (
+								// Toggle
+								<div className="flex items-center mb-4">
+									<label
+										htmlFor={`toggle-${index}`}
+										className={`${
+											values[index] ? "bg-blue-600" : "bg-gray-300"
+										} relative inline-block w-12 rounded-full h-6 transition-colors duration-200 ease-in-out cursor-pointer`}
+									>
+										<input
+											id={`toggle-${index}`}
+											type="checkbox"
+											className="opacity-0 w-0 h-0"
+											checked={!!values[index]}
+											readOnly
+										/>
+										<span
+											className={`${
+												values[index] ? "translate-x-6" : "translate-x-1"
+											} inline-block w-5 h-5 bg-white rounded-full transform transition-transform duration-200 ease-in-out`}
+										/>
+									</label>
+									<span className="ml-3 text-gray-700 font-medium">
+										{values[index] ? "Yes" : "No"}
+									</span>
+								</div>
+							) : (
+								// Slider
+								<div className="flex items-center mb-4">
+									<input 
+										type="range" 
+										min="1" 
+										max="10" 
+										value={typeof values[index] === 'number' ? values[index] : 1}
+										className="flex-grow mr-2"
+										readOnly
+									/>
+									<span>{values[index]}</span>
+								</div>
+							)}
+						</div>
+					))}
+
 
 					{ !(isRecording || recordingStopped.current) && !successMessage && <IDKitWidget
 						action={process.env.NEXT_PUBLIC_WLD_ACTION_NAME!}

@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { useEffect, useState } from 'react';
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 
 interface VoteData {
@@ -11,17 +11,23 @@ interface VoteData {
 
 const Display: React.FC = () => {
 
+    let app;
 	const firebaseConfig = {
-		apiKey: "AIzaSyDx2GdJQTszMTqNx2Q1hmYaFnrrFdWFGK8",
-		authDomain: "worldvote-8f984.firebaseapp.com",
-		projectId: "worldvote-8f984",
-		storageBucket: "worldvote-8f984.appspot.com",
-		messagingSenderId: "53279430852",
-		appId: "1:53279430852:web:f6001b1f82140d122c5191",
-		measurementId: "G-260B099L1M"
-	  };
+		apiKey: process.env.NEXT_PUBLIC_WLD_apiKey,
+		authDomain: process.env.NEXT_PUBLIC_WLD_authDomain,
+		projectId: process.env.NEXT_PUBLIC_WLD_projectId,
+		storageBucket: process.env.NEXT_PUBLIC_WLD_storageBucket,
+		messagingSenderId: process.env.NEXT_PUBLIC_WLD_messagingSenderId,
+		appId: process.env.NEXT_PUBLIC_WLD_appId,
+		measurementId: process.env.NEXT_PUBLIC_WLD_measurementId
+	};
+
+    if (!getApps().length) {
+        app = initializeApp(firebaseConfig);
+      } else {
+        app = getApps()[0]; // if Firebase app is already initialized, use the existing app
+    }
 	
-	const app = initializeApp(firebaseConfig);
 	const db = getFirestore(app);
 
     const [data, setData] = useState<VoteData[]>([]);
