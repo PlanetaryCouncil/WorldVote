@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { Bar, Pie } from "react-chartjs-2";
+import { questions } from "@/data/questions";
 
 interface VoteData {
 	votes: number[];
@@ -83,7 +84,8 @@ const Display: React.FC = () => {
 				<div className="my-3 card outline-black/10 outline shadow-md">
 					<div className="card-body">
 						<p className="mb-1 text-black/60">
-							Responses for question {index + 1}
+							Responses for question {index + 1}<br/>
+                            { questions[index].title }
 						</p>
 						<div className="max-w-md ml-auto">
 							<Bar
@@ -119,7 +121,7 @@ const Display: React.FC = () => {
 				</div>
 			))}
 			{/* Used for Mockup Reasons */}
-			<div className="my-3 card outline-black/10 outline shadow-md">
+			{/* <div className="my-3 card outline-black/10 outline shadow-md">
 				<div className="card-body">
 					<p className="mb-1 text-black/60">Responses for question #0</p>
 					<div className="w-full ">
@@ -148,15 +150,18 @@ const Display: React.FC = () => {
 						/>
 					</div>
 				</div>
-			</div>
-			<ul>
+			</div> */}
+
+			{/* <ul>
 				{data.map((item, index) => (
 					<li key={index}>
 						<strong>Votes:</strong> {item.votes.join(", ")},{" "}
 						<strong>WorldID:</strong> {item.worldID.toString()}
 					</li>
 				))}
-			</ul>
+			</ul> */}
+
+            
 		</div>
 	);
 };

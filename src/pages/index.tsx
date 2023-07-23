@@ -2,7 +2,7 @@ import { CredentialType, IDKitWidget } from "@worldcoin/idkit";
 import type { ISuccessResult } from "@worldcoin/idkit";
 import type { VerifyReply } from "./api/verify";
 import { questions, Question } from '../data/questions';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, addDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -14,6 +14,17 @@ export default function Home() {
 	const [questionsDone, setQuestionDone] = useState(false);
 	const [values, setValues] = useState<(number|boolean)[]>([]);
 	const [successMessage, setSuccessMessage] = useState("");
+	const [count, setCount] = useState(3);
+	const [isCountingDown, setIsCountingDown] = useState(false);
+
+	useEffect(() => {
+		if (isCountingDown && count > 0) {
+		  setTimeout(() => setCount(count - 1), 1000);
+		} else if (isCountingDown && count === 0) {
+		  startRecording(); // Start recording when count is 0
+		}
+	}, [count, isCountingDown]);
+
 
 	let app;
 	const firebaseConfig = {
@@ -115,7 +126,12 @@ export default function Home() {
 	const [usingWorldID, setUsingWorldID] = useState(false);
 	const [uploadProgress, setUploadProgress] = useState(0);
 
+	const startRecordingCountdown = () => {
+		setIsCountingDown(true);
+	};
+
 	const startRecording = async () => {
+		setIsCountingDown(false);
 		setIsRecording(true);
 		try {
 		  const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
@@ -334,7 +350,7 @@ export default function Home() {
 				{!usingWorldID &&
 					<div>
 						{ !isRecording &&
-								<button className="border border-black rounded-md" onClick={startRecording} >
+								<button className="border border-black rounded-md" onClick={startRecordingCountdown} >
 									<div className="mx-3 my-1">Verify with selfie video</div>
 								</button>
 						}
@@ -343,6 +359,8 @@ export default function Home() {
 								<div className="mx-3 my-1">Stop recording</div>
 							</button>
 						}
+
+						{isCountingDown && <h1>{count}</h1>}
 						
 						{ isRecording && !recordingStopped.current && <video ref={localVideoRef} width="320" height="240" autoPlay muted /> }
 
