@@ -113,6 +113,7 @@ export default function Home() {
 	const recordingStopped = useRef(false);
 	const [submittedToFirebase, setSubmittedToFirebase] = useState(false);
 	const [usingWorldID, setUsingWorldID] = useState(false);
+	const [uploadProgress, setUploadProgress] = useState(0);
 
 	const startRecording = async () => {
 		setIsRecording(true);
@@ -153,6 +154,8 @@ export default function Home() {
 		  (snapshot) => {
 			const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
 			console.log('Upload is ' + progress + '% done');
+
+			setUploadProgress(Math.floor(progress));
 		  }, 
 		  (error) => {
 			console.error('Upload failed:', error);
@@ -206,10 +209,7 @@ export default function Home() {
 					<div className="max-w-md w-full bg-white p-6 rounded shadow">
 						<h2 className="text-2xl font-semibold mb-2">{questions[currentQuestionIndex].title}</h2>
 						<p className="text-gray-600 mb-4">{questions[currentQuestionIndex].description}</p>
-						{/* <div className="flex items-center mb-4"> */}
-							{/* <input type="range" min="0" max="10" step="0.1" value={sliderValue} onChange={(e) => setSliderValue(parseFloat(e.target.value))} className="flex-grow mr-2"/>
-							<span>{sliderValue}</span> */}
-
+	
 							{
 								questions[currentQuestionIndex].yesno ? (
 									// Toggle
@@ -254,7 +254,6 @@ export default function Home() {
 								)
 								}
 
-						{/* </div> */}
 						<button onClick={handleSubmit} className="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600">Submit</button>
 					</div>
 				</div>
@@ -311,7 +310,6 @@ export default function Home() {
 						</div>
 					))}
 
-
 					{ !(isRecording || recordingStopped.current) && !successMessage && <IDKitWidget
 						action={process.env.NEXT_PUBLIC_WLD_ACTION_NAME!}
 						app_id={process.env.NEXT_PUBLIC_WLD_APP_ID!}
@@ -348,11 +346,15 @@ export default function Home() {
 						
 						{ isRecording && !recordingStopped.current && <video ref={localVideoRef} width="320" height="240" autoPlay muted /> }
 
+						{ !videoURL && recordingStopped.current && <p>Upload progress: { uploadProgress }%</p> }
+						{ videoURL && !submittedToFirebase && <p>Upload done ✅</p> }
+
 						<div style={{ display: videoURL && !submittedToFirebase ? 'block' : 'none' }}>
 							<h2>Recorded video:</h2>
 							<video ref={receivedVideoRef} width="320" height="240" controls />
+							
 							<button className="border border-black rounded-md" onClick={submitFirebase} >
-								<div className="mx-3 my-1">Submit data</div>
+								<div className="mx-3 my-1">Submit data & uploaded video</div>
 							</button>
 						</div>
 
