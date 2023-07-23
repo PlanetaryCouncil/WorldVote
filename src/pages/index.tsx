@@ -278,7 +278,7 @@ export default function Home() {
 
 		{ questionsDone && 
 			<div>
-				<div className="flex flex-col items-center justify-center align-middle h-screen">
+				<div className="flex flex-col items-center justify-center h-auto overflow-auto my-12">
 
 					{questions.map((question, index) => (
 						<div key={index} className="max-w-md w-full bg-white p-6 rounded shadow mb-4">
